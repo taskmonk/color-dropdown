@@ -27,3 +27,13 @@
 
 
 ![alt text](./example01.png)
+
+
+### Testing local
+#### Run this from package dev env terminal
+
+    npm link
+
+#### Run this from folder when you want to import to
+
+    npm link tm-color-dropdown
