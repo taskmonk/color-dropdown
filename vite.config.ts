@@ -9,9 +9,10 @@ const { EsLinter, linterPlugin } = EsLint
 import * as packageJson from './package.json'
 // https://vitejs.dev/config/
 export default defineConfig((configEnv) => ({
-
   plugins: [
-    react(),
+    react({
+      jsxRuntime: 'classic',
+    }),
     tsConfigPaths(),
     linterPlugin({
       include: ['./src}/**/*.{ts,tsx}'],
@@ -30,6 +31,9 @@ export default defineConfig((configEnv) => ({
     },
     rollupOptions: {
       external: [...Object.keys(packageJson.peerDependencies)],
+      output: {
+        globals:  { react: 'React' }
+      }
     },
   },
 }))

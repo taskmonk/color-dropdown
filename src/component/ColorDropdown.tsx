@@ -1,106 +1,118 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
-import { Listbox, Transition } from '@headlessui/react'
-import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid'
-import "../index.css"
+import React from "react";
 
-export interface IColor {
-    color: string;
+import { IColourOption, colourOptions } from "./ColorOptions";
+import Select, { createFilter } from "react-select";
+import chroma from "chroma-js";
+import colourStyles from "./ColorStyles";
+
+interface IColorDropdownProps {
+  options?: IColourOption[];
+  styles?: any; // Adjust the type according to your ColorStyles
+  id?: string;
+  menuPortalTarget?: HTMLElement | null;
+  isClearable?: boolean;
+  onChange: (e: any) => void;
+  value?: string;
+  isDisabled?: boolean;
+  menuShouldScrollIntoView?: boolean;
+  placeholder?: any;
+  rangeValues?: [];
+  required?: any;
+  target?: any;
+  input: {
+    onChange: (value: string) => void;
+    value: string;
     name: string;
-    displayName: string;
+    color: string;
+  };
+  defaultValue?: any;
+  errortext?: any;
+  meta: {
+    touched: boolean;
+  };
 }
 
-function classNames(...classes: string[]) {
-    return classes.filter(Boolean).join(' ')
-}
+const ColorDropDown = ({
+  options,
+  styles,
+  id,
+  menuPortalTarget = document.querySelector("body"),
+  isClearable,
+  isDisabled,
+  menuShouldScrollIntoView,
+  meta,
+  ...props
+}: IColorDropdownProps) => {
+  const { touched } = meta;
 
-export interface IColorDropdown {
-    options: IColor[];
-    value: IColor;
-    onChange: (selected: IColor | undefined) => void;
-}
+  let filteredOptions: IColourOption[] = [];
+  if (props.rangeValues && props.rangeValues.length) {
+    let colorOptions: IColourOption[] = [];
+    props.rangeValues.forEach((color: string) => {
+      if (chroma.valid(color)) {
+        colorOptions.push({
+          label: color,
+          value: color,
+          color: color,
+        });
+      }
+    });
+    filteredOptions = colorOptions;
+  } else {
+    filteredOptions = [...colourOptions];
+  }
 
-function ColorDropdown({ options, value, onChange }: IColorDropdown) {
-    const [currentName, setCurrentName] = useState<string>(value?.name)
+  let uniqueOptions = new Set<string>();
+  let uniqueFilteredOptions: IColourOption[] = [];
+  // Filter out duplicate color values and ensure uniqueness
+  filteredOptions.forEach((option) => {
+    if (!uniqueOptions.has(option.value)) {
+      uniqueOptions.add(option.value);
+      uniqueFilteredOptions.push(option);
+    }
+  });
+  return (
+    <div
+      style={
+        props?.required && !props.input.value
+          ? {
+              borderRadius: 5,
+              border: "1px solid red",
+              marginTop: "0px",
+              marginRight: "0px",
+            }
+          : { border: "", marginTop: "0px", marginRight: "0px" }
+      }
+    >
+      <Select
+        defaultValue={uniqueFilteredOptions ? "Select.." : colourOptions[0]}
+        options={uniqueFilteredOptions}
+        styles={colourStyles}
+        menuPortalTarget={
+          props.target ? props.target : document.querySelector("body")
+        }
+        value={props.value}
+        onChange={props.onChange}
+        filterOption={createFilter({ ignoreAccents: false })}
+        isClearable={true}
+        isDisabled={isDisabled}
+        menuShouldScrollIntoView={true}
+      />
+      {touched && props.required
+        ? props.input.value == "" && (
+            <div
+              style={{
+                color: "red",
+                fontSize: "14px",
+                padding: "5px",
+              }}
+            >
+              {"*" + props.errortext}
+            </div>
+          )
+        : null}
+    </div>
+  );
+};
 
-    const selectedObj: IColor | undefined = useMemo(() => {
-        return options.find((e: IColor) => e.name == currentName)
-    }, [currentName])
-
-    useEffect(() => {
-        onChange(selectedObj)
-    }, [selectedObj])
-
-    return <>
-
-        <Listbox value={currentName} onChange={(e: string) => {
-            setCurrentName(e)
-        }}>
-            {({ open }) => (
-                <>
-                    <div className="relative mt-2">
-                        <Listbox.Button className="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm sm:leading-6">
-                            <span className="flex items-center">
-                                <span className='w-2 h-2 rounded-full' style={{ backgroundColor: selectedObj?.color }}></span>
-                                <span className="ml-3 block truncate">{selectedObj?.displayName}</span>
-                            </span>
-                            <span className="pointer-events-none absolute inset-y-0 right-0 ml-3 flex items-center pr-2">
-                                <ChevronUpDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                            </span>
-                        </Listbox.Button>
-
-                        <Transition
-                            show={open}
-                            as={Fragment}
-                            leave="transition ease-in duration-100"
-                            leaveFrom="opacity-100"
-                            leaveTo="opacity-0"
-                        >
-                            <Listbox.Options className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-                                {options.map((color) => (
-                                    <Listbox.Option
-
-                                        key={color.color}
-                                        className={({ active }) => {
-                                            return classNames(
-                                                active ? 'bg-indigo-600 text-white' : 'text-gray-900',
-                                                'relative cursor-default select-none py-2 pl-3 pr-9'
-                                            )
-                                        }}
-                                        value={color.name}
-                                    >
-                                        {({ selected, active }) => (
-                                            <>
-                                                <div className="flex items-center">
-                                                    <span className='w-2 h-2 rounded-full' style={{ backgroundColor: color.color }}></span>
-
-                                                    <span
-                                                        className={classNames(selected ? 'font-semibold' : 'font-normal', 'ml-3 block truncate')}
-                                                    >
-                                                        {color.displayName}
-                                                    </span>
-                                                </div>
-
-                                                {selected ? (
-                                                    <span
-                                                        className={classNames(
-                                                            active ? 'text-white' : 'text-indigo-600',
-                                                            'absolute inset-y-0 right-0 flex items-center pr-4'
-                                                        )}
-                                                    >
-                                                        <CheckIcon className="h-5 w-5" aria-hidden="true" />
-                                                    </span>
-                                                ) : null}
-                                            </>
-                                        )}
-                                    </Listbox.Option>
-                                ))}
-                            </Listbox.Options>
-                        </Transition>
-                    </div>
-                </>
-            )}
-        </Listbox>
-    </>
-}
-
-export { ColorDropdown }
+export default ColorDropDown;
